@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Seller dashboard — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h1 style="margin:0">{{ current_user.business_name or current_user.full_name }}</h1>
+        <p class="muted mt-1">
+          Seller dashboard · 📍 {{ current_user.location }}
+          {% if current_user.is_verified %}<span class="badge badge-ok">✔ Verified seller</span>
+          {% else %}<span class="badge badge-amber">Verification pending — admin review</span>{% endif %}
+        </p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a class="btn" href="{{ url_for('auth.profile') }}">Edit contact info</a>
+        <a class="btn btn-primary" href="{{ url_for('seller.new_dog') }}">+ New listing</a>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="label">Live listings</div><div class="value">{{ stats.available }}</div>
+        <div class="sub">{{ stats.total_dogs }} total · {{ stats.sold }} sold</div></div>
+      <div class="stat"><div class="label">Total views</div><div class="value">{{ stats.views }}</div>
+        <div class="sub">Across all your dogs</div></div>
+      <div class="stat"><div class="label">Orders</div><div class="value">{{ stats.orders }}</div>
+        <div class="sub">{{ stats.pending_orders }} awaiting payment</div></div>
+      <div class="stat"><div class="label">Earnings</div><div class="value">{{ stats.revenue|money }}</div>
+        <div class="sub">From paid & completed orders</div></div>
+    </div>
+
+    {% if stats.profile_score < 100 %}
+      <div class="card card-pad mt-3">
+        <div class="section-head" style="margin-bottom:.6rem">
+          <h3 style="margin:0">Complete your seller profile — {{ stats.profile_score }}%</h3>
+          <a class="btn btn-sm" href="{{ url_for('auth.profile') }}">Finish profile</a>
+        </div>
+        <div class="progress"><i style="width:{{ stats.profile_score }}%"></i></div>
+        <p class="hint mt-1">Buyers are far more likely to call sellers whose phone, location and
+          bio are filled in. Your contact details are shown to signed-in buyers on every listing.</p>
+      </div>
+    {% endif %}
+
+    <div class="tabs mt-4">
+      <a class="active" href="#listings">My listings</a>
+      <a href="#orders">Orders ({{ orders|length }})</a>
+      <a href="#inquiries">Enquiries ({{ inquiries|length }})</a>
+    </div>
+
+    <!-- ------------------------------- listings -->
+    <div class="section-head" id="listings">
+      <h2 style="margin:0">My dog listings</h2>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('seller.new_dog') }}">+ Add a dog</a>
+    </div>
+
+    {% if listings %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dog</th><th>Breed / characteristics</th><th>Price</th><th>Location</th>
+                <th>Views</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for dog in listings %}
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.6rem">
+                    {% if dog.primary_image %}
+                      <img class="thumb-xs" src="{{ url_for('static', filename='uploads/' + dog.primary_image) }}" alt="">
+                    {% endif %}
+                    <div>
+                      <strong>{{ dog.name }}</strong>
+                      {% if dog.is_featured %}<div class="badge badge-amber">★ Featured</div>{% endif %}
+                      <div class="muted tiny">Added {{ dog.created_at|since }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="small">{{ dog.breed }}<br>
+                  <span class="muted">{{ dog.size }} · {{ dog.gender }} · {{ dog.age_label }} · {{ dog.color or '—' }}</span></td>
+                <td>{{ dog.price|money }}{% if dog.negotiable %}<div class="muted tiny">negotiable</div>{% endif %}</td>
+                <td class="small">{{ dog.location }}</td>
+                <td>{{ dog.views }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('seller.update_status', dog_id=dog.id) }}">
+                    <select name="status" onchange="this.form.submit()" style="padding:.3rem .5rem;font-size:.8rem">
+                      {% for s in ['available','reserved','sold','hidden'] %}
+                        <option value="{{ s }}" {{ 'selected' if dog.status == s }}>{{ s|capitalize }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </td>
+                <td>
+                  <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                    <a class="btn btn-sm" href="{{ url_for('main.dog_detail', dog_id=dog.id) }}">View</a>
+                    <a class="btn btn-sm" href="{{ url_for('seller.edit_dog', dog_id=dog.id) }}">Edit</a>
+                    <form method="post" action="{{ url_for('seller.delete_dog', dog_id=dog.id) }}"
+                          onsubmit="return confirm('Delete {{ dog.name }} permanently?')">
+                      <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        <h3>You haven't listed any dogs yet</h3>
+        <p>Add your first listing — photos, health records, location and price get you the most enquiries.</p>
+        <a class="btn btn-primary" href="{{ url_for('seller.new_dog') }}">Create a listing</a>
+      </div>
+    {% endif %}
+
+    <!-- -------------------------------- orders -->
+    <h2 id="orders" class="mt-4">Orders from buyers</h2>
+    {% if orders %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Reference</th><th>Dog</th><th>Buyer & contact</th><th>Amount</th>
+                <th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+              <tr>
+                <td class="id-line">{{ o.reference }}<div class="muted tiny">{{ o.created_at|since }}</div></td>
+                <td><strong>{{ o.dog.name }}</strong><div class="muted tiny">{{ o.dog.breed }}</div></td>
+                <td class="small">
+                  {{ o.buyer.full_name }}<br>
+                  <span class="muted">{{ o.buyer_phone or o.buyer.phone or 'no phone' }}</span><br>
+                  <span class="muted">{{ o.buyer.email }}</span>
+                  {% if o.delivery_address %}<div class="muted tiny">📦 {{ o.delivery_address }}</div>{% endif %}
+                  {% if o.notes %}<div class="muted tiny">📝 {{ o.notes }}</div>{% endif %}
+                </td>
+                <td>{{ o.amount|money }}<div class="muted tiny">{{ o.status_label }}</div></td>
+                <td><span class="badge {{ 'badge-ok' if o.status in ('paid','completed') else 'badge-amber' if o.status=='pending_payment' else 'badge-grey' }}">{{ o.status_label }}</span></td>
+                <td>
+                  <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                    <a class="btn btn-sm" href="{{ url_for('main.order_detail', order_id=o.id) }}">Open</a>
+                    {% if o.status == 'paid' %}
+                      <form method="post" action="{{ url_for('seller.update_order_status', order_id=o.id) }}">
+                        <input type="hidden" name="status" value="completed">
+                        <button class="btn btn-sm btn-primary" type="submit">Mark handed over</button>
+                      </form>
+                    {% endif %}
+                    {% if o.status == 'pending_payment' %}
+                      <form method="post" action="{{ url_for('seller.update_order_status', order_id=o.id) }}">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button class="btn btn-sm btn-danger" type="submit">Cancel</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">No orders yet. Listing quality and clear contact details drive sales.</div>
+    {% endif %}
+
+    <!-- ------------------------------ inquiries -->
+    <h2 id="inquiries" class="mt-4">Buyer enquiries</h2>
+    {% if inquiries %}
+      {% for inq in inquiries %}
+        <div class="card card-pad mb-2">
+          <div class="section-head" style="margin-bottom:.3rem">
+            <strong>{{ inq.buyer.full_name }} asked about
+              <a href="{{ url_for('main.dog_detail', dog_id=inq.dog.id) }}">{{ inq.dog.name }}</a></strong>
+            <span class="muted small">{{ inq.created_at|since }}</span>
+          </div>
+          <p class="small" style="margin:.2rem 0">“{{ inq.message }}”</p>
+          <div class="muted tiny mb-1">📞 {{ inq.buyer.phone or 'no phone' }} · ✉️ {{ inq.buyer.email }}</div>
+          {% if inq.reply %}
+            <div class="notice small">Your reply: {{ inq.reply }}</div>
+          {% else %}
+            <form method="post" action="{{ url_for('seller.reply_inquiry', inquiry_id=inq.id) }}" style="display:flex;gap:.5rem">
+              <input name="reply" placeholder="Type your reply…" required style="flex:1">
+              <button class="btn btn-primary" type="submit">Reply</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No enquiries yet.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

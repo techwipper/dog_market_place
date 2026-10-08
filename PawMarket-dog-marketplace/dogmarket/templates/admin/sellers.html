@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Sellers — admin{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <h1>Sellers</h1>
+    {% include "admin/_admin_nav.html" %}
+
+    <div class="section-head mt-2">
+      <p class="muted" style="margin:0">{{ sellers|length }} seller account(s) shown.</p>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <a class="btn btn-sm {{ 'btn-primary' if not status }}" href="{{ url_for('admin.sellers') }}">All</a>
+        <a class="btn btn-sm {{ 'btn-primary' if status == 'verified' }}" href="{{ url_for('admin.sellers', status='verified') }}">Verified</a>
+        <a class="btn btn-sm {{ 'btn-primary' if status == 'unverified' }}" href="{{ url_for('admin.sellers', status='unverified') }}">Unverified</a>
+        <a class="btn btn-sm {{ 'btn-primary' if status == 'suspended' }}" href="{{ url_for('admin.sellers', status='suspended') }}">Suspended</a>
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      {% for s in sellers %}
+        <div class="card card-pad">
+          <div class="profile-head">
+            <span class="avatar avatar-lg">
+              {% if s.avatar %}<img src="{{ url_for('static', filename='uploads/' + s.avatar) }}" alt="">
+              {% else %}{{ s.full_name[0]|upper }}{% endif %}
+            </span>
+            <div>
+              <strong>{{ s.business_name or s.full_name }}</strong>
+              <div class="muted small">{{ s.full_name }}</div>
+              <div class="mt-1">
+                {% if not s.is_active_user %}<span class="badge badge-red">Suspended</span>
+                {% elif s.is_verified %}<span class="badge badge-ok">✔ Verified</span>
+                {% else %}<span class="badge badge-amber">Unverified</span>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="spec-grid" style="grid-template-columns:1fr">
+            <div class="spec"><span>Email</span><span>{{ s.email }}</span></div>
+            <div class="spec"><span>Phone</span><span>{{ s.phone or '—' }}</span></div>
+            <div class="spec"><span>WhatsApp</span><span>{{ s.whatsapp or '—' }}</span></div>
+            <div class="spec"><span>Location</span><span>{{ s.location }}</span></div>
+            <div class="spec"><span>Listings</span><span>{{ s.dogs.count() }}</span></div>
+            <div class="spec"><span>Joined</span><span>{{ s.created_at.strftime('%d %b %Y') }}</span></div>
+          </div>
+
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.8rem">
+            <a class="btn btn-sm" href="{{ url_for('admin.seller_detail', seller_id=s.id) }}">Inspect profile</a>
+            <a class="btn btn-sm" href="{{ url_for('main.seller_profile', seller_id=s.id) }}">Public page</a>
+          </div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem">
+            <form method="post" action="{{ url_for('admin.toggle_verify', user_id=s.id) }}">
+              <button class="btn btn-sm {{ 'btn-danger' if s.is_verified else 'btn-primary' }}" type="submit">
+                {{ 'Unverify' if s.is_verified else 'Verify seller' }}</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.toggle_suspend', user_id=s.id) }}">
+              <button class="btn btn-sm {{ 'btn-danger' if s.is_active_user else '' }}" type="submit">
+                {{ 'Suspend' if s.is_active_user else 'Reactivate' }}</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty">No sellers found for this filter.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

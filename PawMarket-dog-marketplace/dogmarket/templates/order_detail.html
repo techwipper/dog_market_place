@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.reference }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="small muted"><a href="{{ url_for('main.dashboard_router') }}">Dashboard</a> › Order {{ order.reference }}</p>
+    <div class="section-head">
+      <div>
+        <h1 style="margin:0">Order {{ order.reference }}</h1>
+        <p class="muted mt-1">Placed {{ order.created_at|since }} · {{ order.status_label }}</p>
+      </div>
+      <div>
+        <a class="btn" href="{{ url_for('main.receipt', order_id=order.id) }}">View receipt</a>
+      </div>
+    </div>
+
+    <div class="split">
+      <div>
+        <div class="card card-pad">
+          <h3>Payment progress</h3>
+          <ul class="timeline">
+            <li class="done">Order created — {{ order.created_at.strftime('%d %b %Y, %H:%M') }}</li>
+            <li class="{{ 'done' if order.status in ('paid','completed') }}">
+              Payment {{ 'confirmed' if order.status in ('paid','completed') else 'pending' }}
+              {% if order.payment_ref %}<span class="muted tiny">(ref {{ order.payment_ref }})</span>{% endif %}
+            </li>
+            <li class="{{ 'done' if order.status == 'completed' }}">
+              Handover & completion {{ '— done' if order.status == 'completed' else '— awaiting seller' }}
+            </li>
+          </ul>
+
+          {% if order.status == 'pending_payment' %}
+            {% if current_user.id == order.buyer_id %}
+              <div class="notice mt-2">
+                Sandbox gateway: the button below simulates a successful card charge and marks the
+                dog as reserved for you.
+              </div>
+              <div class="grid grid-2 mt-2" style="gap:.6rem">
+                <form method="post" action="{{ url_for('main.pay_order', order_id=order.id) }}">
+                  <button class="btn btn-primary btn-lg btn-block" type="submit">
+                    Pay {{ order.amount|money }} now
+                  </button>
+                </form>
+                <form method="post" action="{{ url_for('main.cancel_order', order_id=order.id) }}">
+                  <button class="btn btn-danger btn-lg btn-block" type="submit">Cancel order</button>
+                </form>
+              </div>
+            {% else %}
+              <div class="notice mt-2">Waiting for the buyer to complete payment.</div>
+            {% endif %}
+          {% elif order.status == 'cancelled' %}
+            <div class="notice mt-2">This order was cancelled and the dog is available again.</div>
+          {% elif order.status == 'completed' %}
+            <div class="notice mt-2">🎉 Handover complete. Congratulations on your new companion!</div>
+          {% endif %}
+        </div>
+
+        <div class="card card-pad mt-3">
+          <h3>Parties</h3>
+          <div class="spec-grid" style="grid-template-columns:1fr">
+            <div class="spec"><span>Buyer</span><span>{{ order.buyer.full_name }} · {{ order.buyer.email }}</span></div>
+            <div class="spec"><span>Buyer phone</span><span>{{ order.buyer_phone or order.buyer.phone or '—' }}</span></div>
+            <div class="spec"><span>Seller</span>
+              <span>{{ order.seller.business_name or order.seller.full_name }} · {{ order.seller.email }}</span></div>
+            <div class="spec"><span>Seller phone</span><span>{{ order.seller.phone or '—' }}</span></div>
+            <div class="spec"><span>Seller location</span><span>{{ order.seller.location }}</span></div>
+            <div class="spec"><span>Delivery address</span><span>{{ order.delivery_address or 'Collect in person' }}</span></div>
+            <div class="spec"><span>Notes</span><span>{{ order.notes or '—' }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card card-pad">
+        <h3>{{ order.dog.name }}</h3>
+        {% if order.dog.primary_image %}
+          <img src="{{ url_for('static', filename='uploads/' + order.dog.primary_image) }}"
+               alt="{{ order.dog.name }}" style="border-radius:12px;aspect-ratio:4/3;object-fit:cover">
+        {% endif %}
+        <div class="spec mt-2"><span>Breed</span><span>{{ order.dog.breed }}</span></div>
+        <div class="spec"><span>Sex / Age</span><span>{{ order.dog.gender }} · {{ order.dog.age_label }}</span></div>
+        <div class="spec"><span>Size / Colour</span><span>{{ order.dog.size }} · {{ order.dog.color or '—' }}</span></div>
+        <div class="spec"><span>Location</span><span>{{ order.dog.location }}</span></div>
+        <div class="receipt-total"><span>Amount</span><span>{{ order.amount|money }}</span></div>
+        <a class="btn btn-block mt-2" href="{{ url_for('main.dog_detail', dog_id=order.dog.id) }}">View listing</a>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

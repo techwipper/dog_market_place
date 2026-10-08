@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Checkout — {{ dog.name }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <h1>Secure checkout</h1>
+    <p class="muted">You're reserving <strong>{{ dog.name }}</strong> from
+      {{ dog.seller.business_name or dog.seller.full_name }} ({{ dog.location }}).</p>
+
+    <div class="split mt-2">
+      <form method="post" class="card card-pad">
+        <h3>Handover details</h3>
+        <div class="field">
+          <label for="buyer_phone">Your phone number *</label>
+          <input id="buyer_phone" name="buyer_phone" required
+                 value="{{ current_user.phone or '' }}" placeholder="+234…">
+          <div class="hint">The seller calls this number to arrange collection or delivery.</div>
+        </div>
+        <div class="field">
+          <label for="delivery_address">Delivery address (leave blank if collecting in person)</label>
+          <textarea id="delivery_address" name="delivery_address" rows="3"
+                    placeholder="House number, street, city">{{ current_user.address or '' }}</textarea>
+        </div>
+        <div class="field">
+          <label for="notes">Notes for the seller</label>
+          <textarea id="notes" name="notes" rows="2"
+                    placeholder="Preferred collection date, questions about {{ dog.name }}…"></textarea>
+        </div>
+
+        <h3 class="mt-3">Payment method</h3>
+        <div class="radio-cards">
+          <label class="radio-card active">
+            <input type="radio" name="payment_method" value="demo" checked>
+            <strong>Sandbox card</strong>
+            <div class="hint">Demo gateway — no real money moves. Swap for Paystack at go-live.</div>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="payment_method" value="transfer">
+            <strong>Bank transfer</strong>
+            <div class="hint">You'll get account details on the order page and the seller confirms
+              once the funds land.</div>
+          </label>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-block mt-3" type="submit">
+          Confirm & continue to payment
+        </button>
+        <div class="hint center mt-1">By continuing you agree to inspect the dog in person before
+          final handover.</div>
+      </form>
+
+      <aside class="card card-pad">
+        <h3>Order summary</h3>
+        <div class="profile-head">
+          <span class="avatar avatar-lg" style="border-radius:12px;overflow:hidden">
+            {% if dog.primary_image %}<img src="{{ url_for('static', filename='uploads/' + dog.primary_image) }}" alt="">
+            {% else %}{{ dog.name[0] }}{% endif %}
+          </span>
+          <div>
+            <strong>{{ dog.name }}</strong>
+            <div class="muted small">{{ dog.breed }} · {{ dog.gender }} · {{ dog.age_label }}</div>
+            <div class="muted small">{{ dog.size }} · {{ dog.color }}</div>
+          </div>
+        </div>
+        <hr>
+        <div class="spec" style="border:0"><span>Listing price</span><span>{{ dog.price|money }}</span></div>
+        <div class="spec" style="border:0"><span>Delivery</span>
+          <span>{{ 'Via seller' if dog.delivery_available else 'Pick-up only' }}</span></div>
+        <div class="spec" style="border:0"><span>Platform fee</span><span>₦0 (free during launch)</span></div>
+        <div class="receipt-total"><span>Total</span><span>{{ dog.price|money }}</span></div>
+
+        <div class="notice mt-2">
+          <strong>Seller:</strong> {{ dog.seller.business_name or dog.seller.full_name }}<br>
+          📍 {{ dog.location }}<br>
+          {% if dog.seller.phone %}📞 {{ dog.seller.phone }}<br>{% endif %}
+          ✉️ {{ dog.seller.email }}
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}

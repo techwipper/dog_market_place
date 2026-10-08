@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Admin overview — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h1 style="margin:0">Admin control centre</h1>
+        <p class="muted mt-1">Every seller, their contact details, listings and orders — in one place.</p>
+      </div>
+      <span class="badge badge-grey">Signed in as {{ current_user.email }}</span>
+    </div>
+
+    {% include "admin/_admin_nav.html" %}
+
+    <div class="stat-grid mt-3">
+      <div class="stat"><div class="label">Sellers</div><div class="value">{{ stats.sellers }}</div>
+        <div class="sub">{{ stats.unverified }} awaiting verification</div></div>
+      <div class="stat"><div class="label">Buyers</div><div class="value">{{ stats.buyers }}</div>
+        <div class="sub">{{ stats.users }} total accounts</div></div>
+      <div class="stat"><div class="label">Listings</div><div class="value">{{ stats.dogs }}</div>
+        <div class="sub">{{ stats.available }} available · {{ stats.sold }} sold</div></div>
+      <div class="stat"><div class="label">Platform revenue</div><div class="value">{{ stats.revenue|money }}</div>
+        <div class="sub">{{ stats.orders }} orders · {{ stats.inquiries }} enquiries</div></div>
+    </div>
+
+    {% if stats.unverified or stats.suspended %}
+      <div class="notice mt-3">
+        <strong>Needs attention:</strong>
+        {{ stats.unverified }} seller profile(s) are not yet verified
+        {% if stats.suspended %} and {{ stats.suspended }} account(s) are suspended{% endif %}.
+        <a href="{{ url_for('admin.sellers', status='unverified') }}">Review sellers →</a>
+      </div>
+    {% endif %}
+
+    <h2 class="mt-4">Seller profiles, contacts & activity</h2>
+    <p class="muted small">This is the moderation table: contact numbers, locations and what each
+      seller has posted. Click a seller to inspect everything.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Seller</th><th>Contact</th><th>Location</th><th>Profile gaps</th>
+            <th>Listings</th><th>Orders</th><th>Revenue</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in seller_rows %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:.6rem">
+                  <span class="avatar avatar-sm">
+                    {% if row.user.avatar %}<img src="{{ url_for('static', filename='uploads/' + row.user.avatar) }}" alt="">
+                    {% else %}{{ row.user.full_name[0]|upper }}{% endif %}
+                  </span>
+                  <div>
+                    <a href="{{ url_for('admin.seller_detail', seller_id=row.user.id) }}"><strong>{{ row.user.business_name or row.user.full_name }}</strong></a>
+                    <div class="muted tiny">{{ row.user.full_name }} · joined {{ row.user.created_at.strftime('%d %b %Y') }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="small">
+                📞 {{ row.user.phone or '—' }}<br>
+                💬 {{ row.user.whatsapp or '—' }}<br>
+                ✉️ {{ row.user.email }}
+              </td>
+              <td class="small">{{ row.user.location }}</td>
+              <td class="small">
+                {% if row.missing %}
+                  {% for m in row.missing %}<span class="badge badge-amber">{{ m }}</span> {% endfor %}
+                {% else %}<span class="badge badge-ok">Complete</span>{% endif %}
+              </td>
+              <td>{{ row.listings }}<div class="muted tiny">{{ row.available }} live · {{ row.sold }} sold</div></td>
+              <td>{{ row.orders }}</td>
+              <td>{{ row.revenue|money }}</td>
+              <td>
+                {% if not row.user.is_active_user %}<span class="badge badge-red">Suspended</span>
+                {% elif row.user.is_verified %}<span class="badge badge-ok">✔ Verified</span>
+                {% else %}<span class="badge badge-amber">Unverified</span>{% endif %}
+              </td>
+              <td>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                  <a class="btn btn-sm" href="{{ url_for('admin.seller_detail', seller_id=row.user.id) }}">Inspect</a>
+                  <form method="post" action="{{ url_for('admin.toggle_verify', user_id=row.user.id) }}">
+                    <button class="btn btn-sm {{ 'btn-danger' if row.user.is_verified else 'btn-primary' }}" type="submit">
+                      {{ 'Unverify' if row.user.is_verified else 'Verify' }}</button>
+                  </form>
+                  <form method="post" action="{{ url_for('admin.toggle_suspend', user_id=row.user.id) }}"
+                        onsubmit="return confirm('{{ 'Reactivate' if not row.user.is_active_user else 'Suspend' }} {{ row.user.full_name }}?')">
+                    <button class="btn btn-sm {{ 'btn-danger' if row.user.is_active_user else '' }}" type="submit">
+                      {{ 'Reactivate' if not row.user.is_active_user else 'Suspend' }}</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="9">No sellers registered yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split mt-4">
+      <div>
+        <h2>Latest listings</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Dog</th><th>Seller</th><th>Price</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              {% for dog in recent_dogs %}
+                <tr>
+                  <td>
+                    <div style="display:flex;gap:.6rem;align-items:center">
+                      {% if dog.primary_image %}<img class="thumb-xs" src="{{ url_for('static', filename='uploads/' + dog.primary_image) }}" alt="">{% endif %}
+                      <div><strong>{{ dog.name }}</strong><div class="muted tiny">{{ dog.breed }}</div></div>
+                    </div>
+                  </td>
+                  <td class="small">{{ dog.seller.business_name or dog.seller.full_name }}</td>
+                  <td>{{ dog.price|money }}</td>
+                  <td><span class="badge badge-grey">{{ dog.status|capitalize }}</span></td>
+                  <td><a class="btn btn-sm" href="{{ url_for('main.dog_detail', dog_id=dog.id) }}">Open</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h2>Recent orders</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ref</th><th>Buyer</th><th>Seller</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for o in recent_orders %}
+                <tr>
+                  <td class="id-line"><a href="{{ url_for('main.order_detail', order_id=o.id) }}">{{ o.reference }}</a></td>
+                  <td class="small">{{ o.buyer.full_name }}</td>
+                  <td class="small">{{ o.seller.business_name or o.seller.full_name }}</td>
+                  <td>{{ o.amount|money }}</td>
+                  <td><span class="badge badge-grey">{{ o.status_label }}</span></td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">No orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

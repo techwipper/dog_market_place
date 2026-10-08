@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit ' + dog.name if dog else 'New listing' }} — {{ SITE_NAME }}{% endblock %}
+
+{% macro val(field, existing) %}{{ form.get(field) if form else (existing if existing is not none else '') }}{% endmacro %}
+{% macro checked(field, existing) %}{{ 'checked' if (form.get(field) if form else existing) }}{% endmacro %}
+
+{% block content %}
+<section>
+  <div class="container" style="width:min(900px,92vw)">
+    <h1>{{ 'Edit listing — ' + dog.name if dog else 'Create a new dog listing' }}</h1>
+    <p class="muted">Fill in everything a buyer needs: appearance, health, price and where the dog is.</p>
+
+    <form method="post" enctype="multipart/form-data" class="card card-pad mt-2">
+      <fieldset>
+        <legend>Basic information</legend>
+        <div class="form-row">
+          <div class="field">
+            <label for="name">Dog's name *</label>
+            <input id="name" name="name" required value="{{ val('name', dog.name if dog else '') }}" placeholder="e.g. Simba">
+          </div>
+          <div class="field">
+            <label for="breed">Breed *</label>
+            <input id="breed" name="breed" required value="{{ val('breed', dog.breed if dog else '') }}"
+                   placeholder="e.g. Labrador Retriever" list="breed-list">
+            <datalist id="breed-list">
+              <option>Labrador Retriever</option><option>German Shepherd</option><option>Rottweiler</option>
+              <option>Boerboel</option><option>French Bulldog</option><option>Pomeranian</option>
+              <option>Beagle</option><option>Bullmastiff</option><option>Mixed Breed (Local)</option>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="field">
+            <label for="gender">Sex *</label>
+            <select id="gender" name="gender">
+              {% for g in genders %}
+                <option value="{{ g }}" {{ 'selected' if (form.get('gender') if form else (dog.gender if dog else 'Male')) == g }}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="age_months">Age (in months) *</label>
+            <input id="age_months" type="number" name="age_months" min="0" max="300" required
+                   value="{{ val('age_months', dog.age_months if dog else 3) }}">
+          </div>
+          <div class="field">
+            <label for="weight_kg">Weight (kg)</label>
+            <input id="weight_kg" type="number" step="0.1" name="weight_kg" min="0"
+                   value="{{ val('weight_kg', dog.weight_kg if dog else '') }}">
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="field">
+            <label for="size">Size *</label>
+            <select id="size" name="size">
+              {% for s in sizes %}
+                <option value="{{ s }}" {{ 'selected' if (form.get('size') if form else (dog.size if dog else 'Medium')) == s }}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="color">Colour / coat</label>
+            <input id="color" name="color" value="{{ val('color', dog.color if dog else '') }}"
+                   placeholder="e.g. Black and Tan">
+          </div>
+          <div class="field">
+            <label for="temperament">Temperament</label>
+            <input id="temperament" name="temperament" value="{{ val('temperament', dog.temperament if dog else '') }}"
+                   placeholder="e.g. Playful, good with children">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Price & handover</legend>
+        <div class="form-row-3">
+          <div class="field">
+            <label for="price">Price ({{ CURRENCY }}) *</label>
+            <input id="price" type="number" step="1000" min="0" name="price" required
+                   value="{{ val('price', dog.price if dog else '') }}" placeholder="e.g. 180000">
+          </div>
+          <div class="field">
+            <label for="status">Listing status</label>
+            <select id="status" name="status">
+              {% for s in ['available','reserved','sold','hidden'] %}
+                <option value="{{ s }}" {{ 'selected' if (form.get('status') if form else (dog.status if dog else 'available')) == s }}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+            <div class="hint">Hidden listings are only visible to you and admins.</div>
+          </div>
+        </div>
+        <div class="switch-grid mt-1">
+          <label class="check"><input type="checkbox" name="negotiable" {{ checked('negotiable', dog.negotiable if dog else False) }}> <span>Price is negotiable</span></label>
+          <label class="check"><input type="checkbox" name="delivery_available" {{ checked('delivery_available', dog.delivery_available if dog else False) }}> <span>Delivery available</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Health & records</legend>
+        <div class="switch-grid">
+          <label class="check"><input type="checkbox" name="vaccinated" {{ checked('vaccinated', dog.vaccinated if dog else False) }}> <span>Vaccinated</span></label>
+          <label class="check"><input type="checkbox" name="dewormed" {{ checked('dewormed', dog.dewormed if dog else False) }}> <span>Dewormed</span></label>
+          <label class="check"><input type="checkbox" name="pedigree" {{ checked('pedigree', dog.pedigree if dog else False) }}> <span>Pedigree / papers available</span></label>
+          <label class="check"><input type="checkbox" name="trained" {{ checked('trained', dog.trained if dog else False) }}> <span>Basic training completed</span></label>
+          <label class="check"><input type="checkbox" name="kennel_club_registered" {{ checked('kennel_club_registered', dog.kennel_club_registered if dog else False) }}> <span>Kennel club registered</span></label>
+        </div>
+        <div class="field mt-2">
+          <label for="health_notes">Health notes</label>
+          <input id="health_notes" name="health_notes" value="{{ val('health_notes', dog.health_notes if dog else '') }}"
+                 placeholder="e.g. Full vaccination card, vet-checked at 8 weeks">
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Location of the dog</legend>
+        <div class="form-row-3">
+          <div class="field">
+            <label for="city">City / area</label>
+            <input id="city" name="city" value="{{ val('city', dog.city if dog else '') }}"
+                   placeholder="{{ current_user.city or 'e.g. Wuse 2' }}">
+          </div>
+          <div class="field">
+            <label for="state">State</label>
+            <input id="state" name="state" value="{{ val('state', dog.state if dog else '') }}"
+                   placeholder="{{ current_user.state or 'e.g. FCT' }}">
+          </div>
+          <div class="field">
+            <label for="country">Country</label>
+            <input id="country" name="country" value="{{ val('country', dog.country if dog else '') or 'Nigeria' }}">
+          </div>
+        </div>
+        <div class="hint">Buyers see this location, plus your phone/WhatsApp from your profile.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Description</legend>
+        <div class="field">
+          <label for="description">Tell buyers about this dog</label>
+          <textarea id="description" name="description" rows="5"
+                    placeholder="Personality, what's included, food it eats, ideal home…">{{ val('description', dog.description if dog else '') }}</textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Photos</legend>
+        <div class="field">
+          <label for="images">Upload photos (JPG/PNG, max 8 MB each)</label>
+          <input id="images" type="file" name="images" accept="image/*" multiple>
+          <div class="hint">First photo becomes the cover. Clear daylight photos get 3× more enquiries.</div>
+        </div>
+
+        {% if dog and dog.images %}
+          <div class="gallery" style="grid-template-columns:repeat(4,1fr)">
+            {% for img in dog.images %}
+              <div>
+                <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" alt="">
+                {% if img.is_primary %}<div class="badge badge-ok mt-1">Cover</div>{% endif %}
+                <div style="display:flex;gap:.3rem;margin-top:.35rem">
+                  {% if not img.is_primary %}
+                    <form method="post" action="{{ url_for('seller.set_primary_image', dog_id=dog.id, image_id=img.id) }}">
+                      <button class="btn btn-sm" type="submit">Set cover</button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('seller.delete_dog_image', dog_id=dog.id, image_id=img.id) }}"
+                        onsubmit="return confirm('Remove this photo?')">
+                    <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </fieldset>
+
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" type="submit">{{ 'Save changes' if dog else 'Publish listing' }}</button>
+        <a class="btn btn-ghost" href="{{ url_for('seller.dashboard') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

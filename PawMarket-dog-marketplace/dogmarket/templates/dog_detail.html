@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ dog.name }} — {{ dog.breed }} for sale in {{ dog.state or dog.country }} | {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="small muted">
+      <a href="{{ url_for('main.home') }}">Home</a> ›
+      <a href="{{ url_for('main.browse') }}">Dogs</a> ›
+      <a href="{{ url_for('main.browse', breed=dog.breed) }}">{{ dog.breed }}</a> › {{ dog.name }}
+    </p>
+
+    <div class="split mt-2">
+      <!-- ------------------------------ left column -->
+      <div>
+        {% if dog.primary_image %}
+          <img class="main-photo" id="mainPhoto"
+               src="{{ url_for('static', filename='uploads/' + dog.primary_image) }}" alt="{{ dog.name }}">
+        {% else %}
+          <img class="main-photo" src="{{ url_for('static', filename='img/placeholder.svg') }}" alt="{{ dog.name }}">
+        {% endif %}
+
+        {% if dog.images|length > 1 %}
+          <div class="gallery">
+            {% for img in dog.images %}
+              <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" alt="{{ dog.name }} photo {{ loop.index }}"
+                   onclick="document.getElementById('mainPhoto').src=this.src">
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="card card-pad mt-3">
+          <div class="section-head" style="margin-bottom:.6rem">
+            <h2 style="margin:0">{{ dog.name }}</h2>
+            <span class="badge {{ 'badge-ok' if dog.status == 'available' else 'badge-info' if dog.status == 'reserved' else 'badge-red' }}">
+              {{ dog.status|capitalize }}
+            </span>
+          </div>
+          <p class="muted small">{{ dog.breed }} · listed {{ dog.created_at|since }} · {{ dog.views }} views</p>
+
+          <div class="chips mt-1">
+            {% for t in dog.traits %}<span class="badge badge-ok">✔ {{ t }}</span>{% endfor %}
+          </div>
+
+          <h3 class="mt-3">About {{ dog.name }}</h3>
+          <p>{{ dog.description or 'The seller has not added a description yet.' }}</p>
+
+          <h3 class="mt-3">Characteristics</h3>
+          <div class="spec-grid">
+            <div class="spec"><span>Breed</span><span>{{ dog.breed }}</span></div>
+            <div class="spec"><span>Colour</span><span>{{ dog.color or '—' }}</span></div>
+            <div class="spec"><span>Size</span><span>{{ dog.size }}</span></div>
+            <div class="spec"><span>Sex</span><span>{{ dog.gender }}</span></div>
+            <div class="spec"><span>Age</span><span>{{ dog.age_label }} ({{ dog.age_bucket }})</span></div>
+            <div class="spec"><span>Weight</span><span>{{ (dog.weight_kg ~ ' kg') if dog.weight_kg else '—' }}</span></div>
+            <div class="spec"><span>Temperament</span><span>{{ dog.temperament or '—' }}</span></div>
+            <div class="spec"><span>Vaccinated</span><span>{{ 'Yes' if dog.vaccinated else 'No' }}</span></div>
+            <div class="spec"><span>Dewormed</span><span>{{ 'Yes' if dog.dewormed else 'No' }}</span></div>
+            <div class="spec"><span>Pedigree</span><span>{{ 'Yes' if dog.pedigree else 'No' }}</span></div>
+            <div class="spec"><span>Trained</span><span>{{ 'Yes' if dog.trained else 'No' }}</span></div>
+            <div class="spec"><span>Kennel club</span><span>{{ 'Registered' if dog.kennel_club_registered else 'Not registered' }}</span></div>
+            <div class="spec"><span>Delivery</span><span>{{ 'Available' if dog.delivery_available else 'Pick-up only' }}</span></div>
+            <div class="spec"><span>Price</span><span>{{ dog.price|money }}{{ ' (negotiable)' if dog.negotiable }}</span></div>
+            <div class="spec"><span>Location</span><span>{{ dog.location }}</span></div>
+            <div class="spec"><span>Health notes</span><span>{{ dog.health_notes or '—' }}</span></div>
+          </div>
+        </div>
+
+        {% if related %}
+          <div class="mt-4">
+            <h2>More {{ dog.breed }} listings</h2>
+            <div class="grid grid-3">
+              {% for dog in related %}{% include "_dog_card.html" %}{% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- ------------------------------ right column -->
+      <div>
+        <div class="seller-box">
+          <div class="dog-price" style="font-size:1.6rem">{{ dog.price|money }}
+            {% if dog.negotiable %}<small>· negotiable</small>{% endif %}</div>
+          <p class="muted small mt-0">📍 {{ dog.location }}</p>
+
+          {% if dog.status == 'available' %}
+            {% if current_user.is_authenticated and not current_user.is_seller and dog.seller_id != current_user.id %}
+              <a class="btn btn-primary btn-lg btn-block" href="{{ url_for('main.checkout', dog_id=dog.id) }}">Reserve / buy now</a>
+            {% elif current_user.is_authenticated and dog.seller_id == current_user.id %}
+              <a class="btn btn-dark btn-block" href="{{ url_for('seller.edit_dog', dog_id=dog.id) }}">Edit your listing</a>
+            {% else %}
+              <a class="btn btn-primary btn-lg btn-block" href="{{ url_for('auth.login', next=url_for('main.checkout', dog_id=dog.id)) }}">
+                Sign in to reserve</a>
+              <div class="hint center mt-1">New here?
+                <a href="{{ url_for('auth.register', role='buyer') }}">Create a buyer account</a></div>
+            {% endif %}
+          {% else %}
+            <button class="btn btn-block" disabled>{{ dog.status|capitalize }}</button>
+          {% endif %}
+
+          <hr>
+
+          <h3>Seller information</h3>
+          <div class="profile-head">
+            <span class="avatar avatar-lg">
+              {% if seller.avatar %}<img src="{{ url_for('static', filename='uploads/' + seller.avatar) }}" alt="">
+              {% else %}{{ seller.full_name[0]|upper }}{% endif %}
+            </span>
+            <div>
+              <strong>{{ seller.business_name or seller.full_name }}</strong>
+              {% if seller.business_name %}<div class="muted small">Owner: {{ seller.full_name }}</div>{% endif %}
+              <div class="mt-1">
+                {% if seller.is_verified %}<span class="badge badge-ok">✔ Verified seller</span>
+                {% else %}<span class="badge badge-grey">Not yet verified</span>{% endif %}
+              </div>
+              <div class="muted tiny mt-1">Member since {{ seller.created_at.strftime('%b %Y') }}</div>
+            </div>
+          </div>
+
+          <div class="spec-grid" style="grid-template-columns:1fr">
+            <div class="spec"><span>Location</span><span>{{ seller.location }}</span></div>
+            {% if seller.address %}<div class="spec"><span>Address</span><span>{{ seller.address }}</span></div>{% endif %}
+            <div class="spec"><span>Active listings</span><span>{{ seller_stats.listings }}</span></div>
+          </div>
+
+          {% if can_view_contact %}
+            <div class="mt-2">
+              <label>Direct contact</label>
+              <div class="spec-grid" style="grid-template-columns:1fr">
+                <div class="spec"><span>Phone</span><span>{{ seller.phone or '—' }}</span></div>
+                <div class="spec"><span>WhatsApp</span><span>{{ seller.whatsapp or seller.phone or '—' }}</span></div>
+                <div class="spec"><span>Email</span><span>{{ seller.email }}</span></div>
+              </div>
+              <div class="grid grid-2 mt-1" style="gap:.5rem">
+                {% if seller.phone %}<a class="btn btn-sm" href="tel:{{ seller.phone }}">📞 Call seller</a>{% endif %}
+                {% if seller.wa_link %}<a class="btn btn-sm btn-primary" href="{{ seller.wa_link }}" target="_blank" rel="noopener">💬 WhatsApp</a>{% endif %}
+              </div>
+              <a class="btn btn-ghost btn-block mt-1" href="{{ url_for('main.seller_profile', seller_id=seller.id) }}">
+                View seller profile & all dogs</a>
+            </div>
+          {% else %}
+            <div class="notice mt-2">
+              🔒 <a href="{{ url_for('auth.login', next=url_for('main.dog_detail', dog_id=dog.id)) }}">Sign in</a>
+              to see the seller's phone number, WhatsApp and email.
+            </div>
+          {% endif %}
+
+          {% if current_user.is_authenticated and not current_user.is_seller and dog.seller_id != current_user.id %}
+            <hr>
+            <h3>Message the seller</h3>
+            <form method="post" action="{{ url_for('main.inquire', dog_id=dog.id) }}">
+              <textarea name="message" rows="3" placeholder="Hi, is {{ dog.name }} still available? I'd like to arrange a visit…" required></textarea>
+              <button class="btn btn-dark btn-block mt-1" type="submit">Send enquiry</button>
+            </form>
+          {% elif current_user.is_authenticated and current_user.is_buyer %}
+            <form class="mt-2" method="post" action="{{ url_for('main.toggle_favorite', dog_id=dog.id) }}">
+              <button class="btn btn-block" type="submit">{{ '❤️ Saved — remove' if is_favorite else '🤍 Save to my list' }}</button>
+            </form>
+          {% endif %}
+
+          <div class="notice mt-2">
+            <strong>Stay safe:</strong> always meet the seller at the listed location, ask for the
+            vaccination card and never pay outside the platform.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

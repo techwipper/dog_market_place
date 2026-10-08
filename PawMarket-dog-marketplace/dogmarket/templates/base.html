@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ SITE_NAME }} — Buy and sell dogs{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐕</text></svg>">
+</head>
+<body>
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="{{ url_for('main.home') }}">
+      <span class="brand-mark">🐾</span>
+      <span class="brand-text">{{ SITE_NAME }}</span>
+    </a>
+
+    <form class="nav-search" action="{{ url_for('main.browse') }}" method="get">
+      <input type="search" name="q" placeholder="Search breed, colour or city…"
+             value="{{ request.args.get('q','') if request.endpoint == 'main.browse' else '' }}">
+      <button class="btn btn-sm" type="submit">Search</button>
+    </form>
+
+    <nav class="nav-links">
+      <a href="{{ url_for('main.browse') }}">Browse dogs</a>
+      {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        {% elif current_user.is_seller %}
+          <a href="{{ url_for('seller.dashboard') }}">Seller dashboard</a>
+        {% else %}
+          <a href="{{ url_for('main.buyer_dashboard') }}">My dashboard</a>
+        {% endif %}
+        <div class="user-menu">
+          <span class="avatar avatar-sm">
+            {% if current_user.avatar %}
+              <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" alt="">
+            {% else %}{{ current_user.full_name[0]|upper }}{% endif %}
+          </span>
+          <div class="dropdown">
+            <a href="{{ url_for('auth.profile') }}">Profile & contact</a>
+            {% if current_user.is_buyer %}
+              <a href="{{ url_for('main.buyer_dashboard') }}">Purchases & saved</a>
+            {% endif %}
+            {% if current_user.is_seller %}
+              <a href="{{ url_for('seller.new_dog') }}">+ New listing</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}">Sign out</a>
+          </div>
+        </div>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Sign in</a>
+        <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register', role='seller') }}">Sell a dog</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container flashes">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'error' if category == 'error' else category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <div class="brand brand-light"><span class="brand-mark">🐾</span> {{ SITE_NAME }}</div>
+      <p class="muted-light">The marketplace that connects dog lovers with trusted, verified
+        breeders and sellers near them.</p>
+    </div>
+    <div>
+      <h4>Buyers</h4>
+      <a href="{{ url_for('main.browse') }}">Browse all dogs</a>
+      <a href="{{ url_for('main.browse', size='Small') }}">Small breeds</a>
+      <a href="{{ url_for('main.browse', size='Giant') }}">Guard dogs</a>
+      <a href="{{ url_for('auth.register', role='buyer') }}">Create buyer account</a>
+    </div>
+    <div>
+      <h4>Sellers</h4>
+      <a href="{{ url_for('auth.register', role='seller') }}">Become a seller</a>
+      <a href="{{ url_for('auth.login') }}">Seller sign in</a>
+      <a href="{{ url_for('main.home') }}#how">How selling works</a>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <a href="mailto:{{ CONTACT_EMAIL }}">{{ CONTACT_EMAIL }}</a>
+      <span class="muted-light">Abuja, Nigeria</span>
+      <span class="muted-light">Support: Mon–Sat, 9am–6pm WAT</span>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© {{ SITE_NAME }} — demo project. Payments run on a sandbox gateway.</span>
+  </div>
+</footer>
+</body>
+</html>

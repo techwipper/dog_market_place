@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Users — admin{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <h1>All user accounts</h1>
+    {% include "admin/_admin_nav.html" %}
+
+    <div class="section-head mt-2">
+      <p class="muted" style="margin:0">{{ users|length }} account(s){% if role %} — role: {{ role }}{% endif %}.</p>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <a class="btn btn-sm {{ 'btn-primary' if not role }}" href="{{ url_for('admin.users') }}">All</a>
+        {% for r in ['buyer','seller','admin'] %}
+          <a class="btn btn-sm {{ 'btn-primary' if role == r }}" href="{{ url_for('admin.users', role=r) }}">{{ r|capitalize }}s</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Contact</th><th>Location</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td><strong>{{ u.full_name }}</strong>{% if u.business_name %}<div class="muted tiny">{{ u.business_name }}</div>{% endif %}</td>
+              <td><span class="badge {{ 'badge-info' if u.is_admin else 'badge-ok' if u.is_seller else 'badge-grey' }}">{{ u.role|capitalize }}</span></td>
+              <td class="small">✉️ {{ u.email }}<br>📞 {{ u.phone or '—' }}<br>💬 {{ u.whatsapp or '—' }}</td>
+              <td class="small">{{ u.location }}</td>
+              <td class="small">{{ u.created_at.strftime('%d %b %Y') }}</td>
+              <td>
+                {% if not u.is_active_user %}<span class="badge badge-red">Suspended</span>
+                {% elif u.is_verified %}<span class="badge badge-ok">✔ Verified</span>
+                {% else %}<span class="badge badge-grey">Active</span>{% endif %}
+              </td>
+              <td>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                  {% if u.is_seller %}
+                    <a class="btn btn-sm" href="{{ url_for('admin.seller_detail', seller_id=u.id) }}">Seller file</a>
+                  {% endif %}
+                  {% if not u.is_admin %}
+                    <form method="post" action="{{ url_for('admin.toggle_suspend', user_id=u.id) }}">
+                      <button class="btn btn-sm {{ 'btn-danger' if u.is_active_user else '' }}" type="submit">
+                        {{ 'Suspend' if u.is_active_user else 'Reactivate' }}</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

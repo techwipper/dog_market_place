@@ -1,0 +1,41 @@
+{% set dog = dog %}
+<article class="dog-card">
+  <div class="dog-thumb">
+    <a href="{{ url_for('main.dog_detail', dog_id=dog.id) }}">
+      <img src="{{ url_for('static', filename='uploads/' + dog.primary_image) if dog.primary_image else url_for('static', filename='img/placeholder.svg') }}"
+           alt="{{ dog.name }} — {{ dog.breed }}" loading="lazy">
+    </a>
+    <div class="thumb-tags">
+      {% if dog.is_featured %}<span class="badge badge-amber">★ Featured</span>{% endif %}
+      {% if dog.status == 'reserved' %}<span class="badge badge-info">Reserved</span>{% endif %}
+      {% if dog.status == 'sold' %}<span class="badge badge-red">Sold</span>{% endif %}
+      {% if dog.vaccinated %}<span class="badge badge-ok">Vaccinated</span>{% endif %}
+    </div>
+    {% if current_user.is_authenticated and current_user.is_buyer %}
+      <div class="thumb-fav">
+        <form method="post" action="{{ url_for('main.toggle_favorite', dog_id=dog.id) }}">
+          <button type="submit" title="Save this dog">{{ '❤️' if dog.id in favorite_ids else '🤍' }}</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+  <div class="dog-body">
+    <h3><a href="{{ url_for('main.dog_detail', dog_id=dog.id) }}" style="color:inherit">{{ dog.name }}</a></h3>
+    <div class="dog-meta">{{ dog.breed }} · {{ dog.gender }} · {{ dog.age_label }}</div>
+    <div class="chips">
+      <span class="pill">{{ dog.size }}</span>
+      {% if dog.color %}<span class="pill">{{ dog.color }}</span>{% endif %}
+    </div>
+    <div class="dog-meta">📍 {{ dog.location }}</div>
+    <div class="dog-price">
+      {{ dog.price|money }}
+      {% if dog.negotiable %}<small>· negotiable</small>{% endif %}
+    </div>
+    <div class="dog-meta tiny">Seller: {{ dog.seller.business_name or dog.seller.full_name }}
+      {% if dog.seller.is_verified %}<span class="badge badge-ok">✔ Verified</span>{% endif %}
+    </div>
+    <a class="btn btn-primary btn-sm btn-block mt-1" href="{{ url_for('main.dog_detail', dog_id=dog.id) }}">
+      View details & contact seller
+    </a>
+  </div>
+</article>

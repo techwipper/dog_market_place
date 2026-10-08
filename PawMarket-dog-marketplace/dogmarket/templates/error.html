@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<section>
+  <div class="narrow center card card-pad">
+    <div style="font-size:4rem">🐾</div>
+    <h1 style="margin:.2rem 0">{{ code }}</h1>
+    <p class="muted">{{ message }}</p>
+    <a class="btn btn-primary" href="{{ url_for('main.home') }}">Back to homepage</a>
+    <a class="btn btn-ghost" href="{{ url_for('main.browse') }}">Browse dogs</a>
+  </div>
+</section>
+{% endblock %}

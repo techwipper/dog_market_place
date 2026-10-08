@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ SITE_NAME }} — Buy healthy dogs from trusted sellers{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">🐾 {{ stats.dogs }} dogs available right now</span>
+      <h1>Find your next best friend — straight from the seller.</h1>
+      <p class="lead">Browse verified listings with complete details on breed, size, colour,
+        age and health. See exactly where the dog is and contact the owner directly — no
+        middlemen, no hidden fees.</p>
+
+      <form class="search-bar" action="{{ url_for('main.browse') }}" method="get">
+        <input type="search" name="q" placeholder="Breed, colour or keyword (e.g. Rottweiler)">
+        <select name="size">
+          <option value="">Any size</option>
+          {% for s in ['Small','Medium','Large','Giant'] %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+        <select name="location">
+          <option value="">Any location</option>
+          {% for st in ['FCT','Lagos','Rivers','Kano','Oyo','Enugu'] %}<option value="{{ st }}">{{ st }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-primary btn-lg" type="submit">Search</button>
+      </form>
+
+      <div class="trust-row">
+        <div><strong>{{ stats.dogs }}</strong> dogs listed</div>
+        <div><strong>{{ stats.sellers }}</strong> active sellers</div>
+        <div><strong>{{ stats.states }}</strong> states covered</div>
+        <div><strong>{{ stats.sold }}</strong> happy handovers</div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='uploads/dogs/labrador.jpg') }}" alt="Healthy Labrador puppy">
+      <div class="hero-stat a"><span>Direct seller contact</span>No middlemen</div>
+      <div class="hero-stat b"><span>Verified kennels</span>Checked by admins</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2>Featured dogs</h2>
+        <p class="muted mt-0">Hand-picked listings from sellers across the country.</p>
+      </div>
+      <a class="btn btn-sm" href="{{ url_for('main.browse') }}">View all listings →</a>
+    </div>
+
+    <div class="grid grid-3">
+      {% for dog in featured %}
+        {% include "_dog_card.html" %}
+      {% else %}
+        <div class="empty">No listings yet — check back soon.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="container">
+    <h2>Browse by breed</h2>
+    <div class="grid grid-4 mt-2">
+      {% for breed, count in breeds %}
+        <a class="cc" href="{{ url_for('main.browse', breed=breed) }}">
+          <strong>{{ breed }}</strong>
+          <div class="muted small">{{ count }} available</div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <div class="section-head">
+      <h2>How PawMarket works</h2>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register') }}">Create free account</a>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <b>1</b>
+        <h3>Search & compare</h3>
+        <p class="muted">Filter by breed, size, colour, age, price and location. Every listing
+          shows temperament, health notes and vaccination status.</p>
+      </div>
+      <div class="step">
+        <b>2</b>
+        <h3>Contact the seller</h3>
+        <p class="muted">Message the seller or call/WhatsApp the owner directly. Ask questions,
+          then arrange a visit at the exact location shown on the listing.</p>
+      </div>
+      <div class="step">
+        <b>3</b>
+        <h3>Reserve & collect</h3>
+        <p class="muted">Place a secured order, pay through the sandbox gateway and get a
+          receipt in your buyer dashboard. Sellers confirm handover in theirs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--brand);color:#fff">
+  <div class="container" style="display:flex;justify-content:space-between;align-items:center;gap:2rem;flex-wrap:wrap">
+    <div>
+      <h2 style="color:#fff">Have puppies or adult dogs to sell?</h2>
+      <p style="max-width:44rem;opacity:.9">Create a free seller account, post detailed listings
+        with photos, and manage enquiries, orders and your contact profile from a dedicated
+        seller dashboard.</p>
+    </div>
+    <a class="btn btn-lg btn-accent" href="{{ url_for('auth.register', role='seller') }}">Start selling →</a>
+  </div>
+</section>
+{% endblock %}

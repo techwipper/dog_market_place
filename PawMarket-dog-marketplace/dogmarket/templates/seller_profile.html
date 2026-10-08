@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ seller.business_name or seller.full_name }} — seller profile{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <div class="card card-pad">
+      <div class="profile-head">
+        <span class="avatar avatar-xl">
+          {% if seller.avatar %}<img src="{{ url_for('static', filename='uploads/' + seller.avatar) }}" alt="">
+          {% else %}{{ seller.full_name[0]|upper }}{% endif %}
+        </span>
+        <div>
+          <h1 style="margin:0;font-size:1.7rem">{{ seller.business_name or seller.full_name }}</h1>
+          <div class="chips mt-1">
+            {% if seller.is_verified %}<span class="badge badge-ok">✔ Verified seller</span>{% endif %}
+            <span class="badge badge-grey">Member since {{ seller.created_at.strftime('%b %Y') }}</span>
+            <span class="badge badge-grey">{{ dogs|length }} active listing{{ '' if dogs|length == 1 else 's' }}</span>
+          </div>
+          <p class="muted mt-2" style="max-width:52rem">{{ seller.bio or 'This seller has not written a bio yet.' }}</p>
+        </div>
+      </div>
+
+      <hr>
+      <div class="spec-grid">
+        <div class="spec"><span>Seller name</span><span>{{ seller.full_name }}</span></div>
+        <div class="spec"><span>Location</span><span>{{ seller.location }}</span></div>
+        {% if current_user.is_authenticated %}
+          <div class="spec"><span>Phone</span><span>{{ seller.phone or '—' }}</span></div>
+          <div class="spec"><span>WhatsApp</span><span>{{ seller.whatsapp or seller.phone or '—' }}</span></div>
+          <div class="spec"><span>Email</span><span>{{ seller.email }}</span></div>
+        {% else %}
+          <div class="spec"><span>Contact</span><span>
+            <a href="{{ url_for('auth.login') }}">Sign in to view phone & email</a></span></div>
+        {% endif %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+        <div class="grid grid-2 mt-2" style="gap:.5rem;max-width:420px">
+          {% if seller.phone %}<a class="btn" href="tel:{{ seller.phone }}">📞 Call seller</a>{% endif %}
+          {% if seller.wa_link %}<a class="btn btn-primary" href="{{ seller.wa_link }}" target="_blank" rel="noopener">💬 WhatsApp</a>{% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <h2 class="mt-4">Available dogs from this seller</h2>
+    {% if dogs %}
+      <div class="grid grid-3">
+        {% for dog in dogs %}{% include "_dog_card.html" %}{% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">This seller has no available listings right now.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

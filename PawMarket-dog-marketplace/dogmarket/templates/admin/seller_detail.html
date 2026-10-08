@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}{{ seller.full_name }} — seller file{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <p class="small muted"><a href="{{ url_for('admin.sellers') }}">Sellers</a> › {{ seller.full_name }}</p>
+
+    <div class="section-head">
+      <div class="profile-head">
+        <span class="avatar avatar-xl">
+          {% if seller.avatar %}<img src="{{ url_for('static', filename='uploads/' + seller.avatar) }}" alt="">
+          {% else %}{{ seller.full_name[0]|upper }}{% endif %}
+        </span>
+        <div>
+          <h1 style="margin:0;font-size:1.6rem">{{ seller.business_name or seller.full_name }}</h1>
+          <div class="chips mt-1">
+            {% if not seller.is_active_user %}<span class="badge badge-red">Suspended</span>
+            {% elif seller.is_verified %}<span class="badge badge-ok">✔ Verified</span>
+            {% else %}<span class="badge badge-amber">Unverified</span>{% endif %}
+            <span class="badge badge-grey">User #{{ seller.id }}</span>
+            <span class="badge badge-grey">Joined {{ seller.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <a class="btn btn-sm" href="{{ url_for('main.seller_profile', seller_id=seller.id) }}">View public profile</a>
+        <form method="post" action="{{ url_for('admin.toggle_verify', user_id=seller.id) }}">
+          <button class="btn btn-sm {{ 'btn-danger' if seller.is_verified else 'btn-primary' }}" type="submit">
+            {{ 'Unverify' if seller.is_verified else 'Verify seller' }}</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.toggle_suspend', user_id=seller.id) }}"
+              onsubmit="return confirm('Confirm account status change?')">
+          <button class="btn btn-sm {{ 'btn-danger' if seller.is_active_user else '' }}" type="submit">
+            {{ 'Suspend account' if seller.is_active_user else 'Reactivate account' }}</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="stat-grid mt-2">
+      <div class="stat"><div class="label">Listings</div><div class="value">{{ dogs|length }}</div></div>
+      <div class="stat"><div class="label">Orders</div><div class="value">{{ orders|length }}</div></div>
+      <div class="stat"><div class="label">Revenue</div><div class="value">{{ revenue|money }}</div></div>
+      <div class="stat"><div class="label">Enquiries</div><div class="value">{{ inquiries|length }}</div></div>
+    </div>
+
+    <div class="card card-pad mt-3">
+      <h2 style="font-size:1.15rem">Contact & profile details (admin view)</h2>
+      <div class="spec-grid">
+        <div class="spec"><span>Full name</span><span>{{ seller.full_name }}</span></div>
+        <div class="spec"><span>Email</span><span>{{ seller.email }}</span></div>
+        <div class="spec"><span>Phone</span><span>{{ seller.phone or '—' }}</span></div>
+        <div class="spec"><span>WhatsApp</span><span>{{ seller.whatsapp or '—' }}</span></div>
+        <div class="spec"><span>Street address</span><span>{{ seller.address or '—' }}</span></div>
+        <div class="spec"><span>City / State</span><span>{{ seller.city or '—' }} / {{ seller.state or '—' }}</span></div>
+        <div class="spec"><span>Country</span><span>{{ seller.country or '—' }}</span></div>
+        <div class="spec"><span>Account status</span><span>{{ 'Active' if seller.is_active_user else 'Suspended' }}</span></div>
+      </div>
+      {% if seller.bio %}<p class="muted small mt-2">Bio: {{ seller.bio }}</p>{% endif %}
+      {% if seller.wa_link %}
+        <a class="btn btn-sm btn-primary mt-1" href="{{ seller.wa_link }}" target="_blank" rel="noopener">Message on WhatsApp</a>
+      {% endif %}
+    </div>
+
+    <h2 class="mt-4">What this seller has posted ({{ dogs|length }})</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dog</th><th>Characteristics</th><th>Price</th><th>Location</th>
+              <th>Views</th><th>Status</th><th>Featured</th><th>Moderation</th></tr>
+        </thead>
+        <tbody>
+          {% for dog in dogs %}
+            <tr>
+              <td>
+                <div style="display:flex;gap:.6rem;align-items:center">
+                  {% if dog.primary_image %}<img class="thumb-xs" src="{{ url_for('static', filename='uploads/' + dog.primary_image) }}" alt="">{% endif %}
+                  <div><strong>{{ dog.name }}</strong><div class="muted tiny">{{ dog.created_at|since }}</div></div>
+                </div>
+              </td>
+              <td class="small">{{ dog.breed }} · {{ dog.size }} · {{ dog.gender }} · {{ dog.age_label }}
+                <div class="muted tiny">{{ dog.color or '—' }} · {{ dog.temperament or 'no temperament listed' }}</div></td>
+              <td>{{ dog.price|money }}</td>
+              <td class="small">{{ dog.location }}</td>
+              <td>{{ dog.views }}</td>
+              <td>
+                <form method="post" action="{{ url_for('admin.set_dog_status', dog_id=dog.id) }}">
+                  <select name="status" onchange="this.form.submit()" style="padding:.3rem;font-size:.8rem">
+                    {% for s in ['available','reserved','sold','hidden'] %}
+                      <option value="{{ s }}" {{ 'selected' if dog.status == s }}>{{ s|capitalize }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('admin.toggle_feature', dog_id=dog.id) }}">
+                  <button class="btn btn-sm" type="submit">{{ '★ Unfeature' if dog.is_featured else '☆ Feature' }}</button>
+                </form>
+              </td>
+              <td>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                  <a class="btn btn-sm" href="{{ url_for('main.dog_detail', dog_id=dog.id) }}">Open</a>
+                  <form method="post" action="{{ url_for('admin.delete_dog', dog_id=dog.id) }}"
+                        onsubmit="return confirm('Delete this listing permanently?')">
+                    <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8">This seller has no listings.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split mt-4">
+      <div>
+        <h2>Orders</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Ref</th><th>Dog</th><th>Buyer</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for o in orders %}
+                <tr>
+                  <td class="id-line"><a href="{{ url_for('main.order_detail', order_id=o.id) }}">{{ o.reference }}</a></td>
+                  <td>{{ o.dog.name }}</td>
+                  <td class="small">{{ o.buyer.full_name }}<div class="muted tiny">{{ o.buyer.email }}</div></td>
+                  <td>{{ o.amount|money }}</td>
+                  <td><span class="badge badge-grey">{{ o.status_label }}</span></td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">No orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h2>Enquiries received</h2>
+        {% for inq in inquiries %}
+          <div class="card card-pad mb-2">
+            <strong class="small">{{ inq.dog.name }} — from {{ inq.buyer.full_name }}</strong>
+            <div class="muted tiny">{{ inq.created_at|since }} · {{ inq.buyer.email }}</div>
+            <p class="small" style="margin:.4rem 0 0">“{{ inq.message }}”</p>
+            {% if inq.reply %}<div class="notice small mt-1">Reply: {{ inq.reply }}</div>{% endif %}
+          </div>
+        {% else %}
+          <div class="empty">No enquiries yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

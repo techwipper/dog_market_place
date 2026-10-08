@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sign in — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="narrow" style="max-width:480px">
+    <div class="card card-pad">
+      <h1 style="font-size:1.7rem">Welcome back</h1>
+      <p class="muted">Sign in to your buyer, seller or admin account.</p>
+
+      <form method="post" class="mt-2">
+        <div class="field">
+          <label for="email">Email address</label>
+          <input id="email" type="email" name="email" required autofocus placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" name="password" required placeholder="••••••••">
+        </div>
+        <div class="check">
+          <input type="checkbox" name="remember" id="remember" checked><label for="remember" style="margin:0;font-weight:500">Keep me signed in</label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block mt-2" type="submit">Sign in</button>
+      </form>
+
+      <p class="center small mt-3">Don't have an account?
+        <a href="{{ url_for('auth.register') }}">Create one free</a></p>
+
+      <div class="notice mt-3">
+        <strong>Demo logins</strong><br>
+        Admin — <span class="id-line">admin@pawmarket.ng / admin123</span><br>
+        Buyer — <span class="id-line">buyer@pawmarket.ng / buyer123</span><br>
+        Seller — <span class="id-line">amina@pawmarket.ng / seller123</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

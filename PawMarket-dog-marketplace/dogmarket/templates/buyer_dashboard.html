@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}My dashboard — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h1 style="margin:0">Welcome, {{ current_user.full_name.split()[0] }} 👋</h1>
+        <p class="muted mt-1">Your purchases, saved dogs and messages in one place.</p>
+      </div>
+      <a class="btn btn-primary" href="{{ url_for('main.browse') }}">Browse dogs</a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="label">Orders</div><div class="value">{{ orders|length }}</div>
+        <div class="sub">{{ orders|selectattr('status','equalto','paid')|list|length }} awaiting handover</div></div>
+      <div class="stat"><div class="label">Total spent</div><div class="value">{{ spent|money }}</div>
+        <div class="sub">Paid & completed orders</div></div>
+      <div class="stat"><div class="label">Saved dogs</div><div class="value">{{ favorites|length }}</div>
+        <div class="sub">In your wishlist</div></div>
+      <div class="stat"><div class="label">Messages</div><div class="value">{{ inquiries|length }}</div>
+        <div class="sub">{{ inquiries|selectattr('reply')|list|length }} replied</div></div>
+    </div>
+
+    <div class="tabs mt-4">
+      <a class="active" href="#orders">My orders</a>
+      <a href="#saved">Saved dogs</a>
+      <a href="#messages">Messages</a>
+    </div>
+
+    <!-- orders -->
+    <h2 id="orders">Order history</h2>
+    {% if orders %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Reference</th><th>Dog</th><th>Seller</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+              <tr>
+                <td class="id-line">{{ o.reference }}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.6rem">
+                    {% if o.dog.primary_image %}
+                      <img class="thumb-xs" src="{{ url_for('static', filename='uploads/' + o.dog.primary_image) }}" alt="">
+                    {% endif %}
+                    <div><strong>{{ o.dog.name }}</strong><div class="muted tiny">{{ o.dog.breed }}</div></div>
+                  </div>
+                </td>
+                <td>{{ o.seller.business_name or o.seller.full_name }}</td>
+                <td>{{ o.amount|money }}</td>
+                <td><span class="badge {{ 'badge-ok' if o.status in ('paid','completed') else 'badge-amber' if o.status=='pending_payment' else 'badge-grey' }}">{{ o.status_label }}</span></td>
+                <td class="muted small">{{ o.created_at.strftime('%d %b %Y') }}</td>
+                <td><a class="btn btn-sm" href="{{ url_for('main.order_detail', order_id=o.id) }}">Open</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        <h3>No orders yet</h3>
+        <p>When you reserve a dog it will appear here with payment status and seller contact.</p>
+        <a class="btn btn-primary" href="{{ url_for('main.browse') }}">Find a dog</a>
+      </div>
+    {% endif %}
+
+    <!-- saved -->
+    <h2 id="saved" class="mt-4">Saved dogs</h2>
+    {% if favorites %}
+      <div class="grid grid-3">
+        {% for fav in favorites %}
+          {% set dog = fav.dog %}{% set favorite_ids = favorite_ids or [] %}
+          {% include "_dog_card.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">Tap the 🤍 on any listing to save it here.</div>
+    {% endif %}
+
+    <!-- messages -->
+    <h2 id="messages" class="mt-4">Messages with sellers</h2>
+    {% if inquiries %}
+      {% for inq in inquiries %}
+        <div class="card card-pad mb-2">
+          <div class="section-head" style="margin-bottom:.3rem">
+            <strong><a href="{{ url_for('main.dog_detail', dog_id=inq.dog.id) }}">{{ inq.dog.name }}</a>
+              — {{ inq.seller.business_name or inq.seller.full_name }}</strong>
+            <span class="muted small">{{ inq.created_at|since }}</span>
+          </div>
+          <p class="small" style="margin:.2rem 0"><strong>You:</strong> {{ inq.message }}</p>
+          {% if inq.reply %}
+            <p class="small" style="margin:.2rem 0;background:var(--brand-tint);padding:.7rem;border-radius:10px">
+              <strong>Seller replied:</strong> {{ inq.reply }}</p>
+          {% else %}
+            <p class="muted small">Awaiting seller reply.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">You haven't messaged any seller yet.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

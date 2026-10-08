@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Browse dogs — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section style="padding-bottom:1rem">
+  <div class="container">
+    <h1>Browse dogs for sale</h1>
+    <p class="muted">{{ pagination.total }} listing{{ '' if pagination.total == 1 else 's' }} match your filters.</p>
+
+    <div class="browse-layout mt-2">
+      <aside class="filters">
+        <form method="get" action="{{ url_for('main.browse') }}">
+          <div class="filter-group">
+            <label for="f-q">Keyword</label>
+            <input id="f-q" type="search" name="q" value="{{ args.get('q','') }}"
+                   placeholder="Name, breed, colour…">
+          </div>
+
+          <div class="filter-group">
+            <label for="f-breed">Breed</label>
+            <select id="f-breed" name="breed">
+              <option value="">All breeds</option>
+              {% for b in breeds %}
+                <option value="{{ b }}" {{ 'selected' if args.get('breed') == b }}>{{ b }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="f-size">Size</label>
+            <select id="f-size" name="size">
+              <option value="">Any size</option>
+              {% for s in sizes %}
+                <option value="{{ s }}" {{ 'selected' if args.get('size') == s }}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="f-color">Colour</label>
+            <input id="f-color" type="text" name="color" value="{{ args.get('color','') }}" placeholder="e.g. Brindle">
+          </div>
+
+          <div class="filter-group">
+            <label for="f-gender">Gender</label>
+            <select id="f-gender" name="gender">
+              <option value="">Any</option>
+              <option value="Male" {{ 'selected' if args.get('gender') == 'Male' }}>Male</option>
+              <option value="Female" {{ 'selected' if args.get('gender') == 'Female' }}>Female</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="f-age">Age group</label>
+            <select id="f-age" name="age">
+              <option value="">Any age</option>
+              <option value="puppy" {{ 'selected' if args.get('age') == 'puppy' }}>Puppy (0–4 months)</option>
+              <option value="young" {{ 'selected' if args.get('age') == 'young' }}>Young (5–12 months)</option>
+              <option value="adult" {{ 'selected' if args.get('age') == 'adult' }}>Adult (1 year +)</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="f-loc">Location</label>
+            <input id="f-loc" list="states" name="location" value="{{ args.get('location','') }}"
+                   placeholder="City or state">
+            <datalist id="states">
+              {% for st in states %}<option value="{{ st }}">{% endfor %}
+            </datalist>
+          </div>
+
+          <div class="filter-group">
+            <label>Price range ({{ CURRENCY }})</label>
+            <div class="price-row">
+              <input type="number" name="min_price" min="0" placeholder="Min" value="{{ args.get('min_price','') }}">
+              <input type="number" name="max_price" min="0" placeholder="Max" value="{{ args.get('max_price','') }}">
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Requirements</label>
+            <div class="check"><input type="checkbox" name="vaccinated" value="1"
+              {{ 'checked' if args.get('vaccinated') == '1' }}> <span>Vaccinated</span></div>
+            <div class="check"><input type="checkbox" name="pedigree" value="1"
+              {{ 'checked' if args.get('pedigree') == '1' }}> <span>Pedigree</span></div>
+            <div class="check"><input type="checkbox" name="delivery" value="1"
+              {{ 'checked' if args.get('delivery') == '1' }}> <span>Delivery available</span></div>
+          </div>
+
+          <div class="filter-group">
+            <label for="f-sort">Sort by</label>
+            <select id="f-sort" name="sort">
+              {% for value, label in [('newest','Newest first'),('price_low','Price: low to high'),
+                                      ('price_high','Price: high to low'),('popular','Most viewed')] %}
+                <option value="{{ value }}" {{ 'selected' if args.get('sort') == value }}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit">Apply filters</button>
+          <a class="btn btn-ghost btn-block mt-1" href="{{ url_for('main.browse') }}">Reset</a>
+        </form>
+      </aside>
+
+      <div>
+        {% if dogs %}
+          <div class="grid grid-3">
+            {% for dog in dogs %}{% include "_dog_card.html" %}{% endfor %}
+          </div>
+
+          {% if pagination.pages > 1 %}
+            <nav class="pagination">
+              {% if pagination.has_prev %}
+                <a href="{{ url_for('main.browse', page=pagination.prev_num, **page_args) }}">‹ Prev</a>
+              {% endif %}
+              {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                  {% if p == pagination.page %}
+                    <span class="current">{{ p }}</span>
+                  {% else %}
+                    <a href="{{ url_for('main.browse', page=p, **page_args) }}">{{ p }}</a>
+                  {% endif %}
+                {% else %}<span>…</span>{% endif %}
+              {% endfor %}
+              {% if pagination.has_next %}
+                <a href="{{ url_for('main.browse', page=pagination.next_num, **page_args) }}">Next ›</a>
+              {% endif %}
+            </nav>
+          {% endif %}
+        {% else %}
+          <div class="empty">
+            <h3>No dogs match those filters</h3>
+            <p>Try widening your price range or clearing a filter or two.</p>
+            <a class="btn btn-primary" href="{{ url_for('main.browse') }}">Clear all filters</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

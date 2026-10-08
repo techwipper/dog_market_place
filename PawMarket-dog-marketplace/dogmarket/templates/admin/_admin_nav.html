@@ -1,0 +1,13 @@
+{% set admin_tabs = [
+  ('admin.dashboard', 'Overview'),
+  ('admin.sellers', 'Sellers'),
+  ('admin.dogs', 'All listings'),
+  ('admin.orders', 'Orders'),
+  ('admin.users', 'All users')
+] %}
+<div class="tabs mt-2">
+  {% for endpoint, label in admin_tabs %}
+    <a class="{{ 'active' if request.endpoint == endpoint or (endpoint != 'admin.dashboard' and request.endpoint and request.endpoint.startswith(endpoint.split('.')[1])) }}"
+       href="{{ url_for(endpoint) }}">{{ label }}</a>
+  {% endfor %}
+</div>

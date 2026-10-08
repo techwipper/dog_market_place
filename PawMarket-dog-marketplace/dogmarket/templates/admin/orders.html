@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Orders — admin{% endblock %}
+
+{% block content %}
+<section>
+  <div class="container">
+    <h1>Orders</h1>
+    {% include "admin/_admin_nav.html" %}
+
+    <div class="section-head mt-2">
+      <p class="muted" style="margin:0">{{ orders|length }} order(s) · value in view: {{ revenue|money }}</p>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <a class="btn btn-sm {{ 'btn-primary' if not status }}" href="{{ url_for('admin.orders') }}">All</a>
+        {% for s in ['pending_payment','paid','completed','cancelled'] %}
+          <a class="btn btn-sm {{ 'btn-primary' if status == s }}" href="{{ url_for('admin.orders', status=s) }}">{{ s.replace('_',' ')|capitalize }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Reference</th><th>Date</th><th>Dog</th><th>Buyer</th><th>Seller</th>
+              <th>Amount</th><th>Method / ref</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+            <tr>
+              <td class="id-line">{{ o.reference }}</td>
+              <td class="small">{{ o.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+              <td class="small"><strong>{{ o.dog.name }}</strong><div class="muted tiny">{{ o.dog.breed }}</div></td>
+              <td class="small">{{ o.buyer.full_name }}<div class="muted tiny">{{ o.buyer.email }} · {{ o.buyer_phone or o.buyer.phone or '—' }}</div></td>
+              <td class="small">{{ o.seller.business_name or o.seller.full_name }}<div class="muted tiny">{{ o.seller.phone or '—' }}</div></td>
+              <td>{{ o.amount|money }}</td>
+              <td class="small">{{ o.payment_method|capitalize }}<div class="muted tiny">{{ o.payment_ref or '—' }}</div></td>
+              <td><span class="badge {{ 'badge-ok' if o.status in ('paid','completed') else 'badge-amber' if o.status=='pending_payment' else 'badge-grey' }}">{{ o.status_label }}</span></td>
+              <td><a class="btn btn-sm" href="{{ url_for('main.order_detail', order_id=o.id) }}">Open</a></td>
+            </tr>
+          {% else %}
+            <tr><td colspan="9">No orders found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Create your account — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<section>
+  <div class="narrow" style="max-width:660px">
+    <div class="card card-pad">
+      <h1 style="font-size:1.7rem">Create your PawMarket account</h1>
+      <p class="muted">It's free. Buyers get direct seller contacts; sellers get a full listing dashboard.</p>
+
+      <form method="post" class="mt-2">
+        <fieldset>
+          <legend>I want to…</legend>
+          <div class="radio-cards">
+            <label class="radio-card {{ 'active' if role != 'seller' }}">
+              <input type="radio" name="role" value="buyer" {{ 'checked' if role != 'seller' }} required>
+              <strong>Buy a dog</strong>
+              <div class="hint">Save favourites, message sellers, pay securely.</div>
+            </label>
+            <label class="radio-card {{ 'active' if role == 'seller' }}">
+              <input type="radio" name="role" value="seller" {{ 'checked' if role == 'seller' }}>
+              <strong>Sell dogs</strong>
+              <div class="hint">Post listings with photos, manage orders & enquiries.</div>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Your details</legend>
+          <div class="field">
+            <label for="full_name">Full name *</label>
+            <input id="full_name" name="full_name" required value="{{ form.get('full_name','') }}" placeholder="e.g. Amina Bello">
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="email">Email *</label>
+              <input id="email" type="email" name="email" required value="{{ form.get('email','') }}">
+            </div>
+            <div class="field">
+              <label for="phone">Phone number</label>
+              <input id="phone" name="phone" value="{{ form.get('phone','') }}" placeholder="+234 803 000 0000">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="password">Password *</label>
+              <input id="password" type="password" name="password" required minlength="6">
+              <div class="hint">At least 6 characters.</div>
+            </div>
+            <div class="field">
+              <label for="confirm">Confirm password *</label>
+              <input id="confirm" type="password" name="confirm" required minlength="6">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Location & contact</legend>
+          <div class="form-row-3">
+            <div class="field">
+              <label for="city">City / area</label>
+              <input id="city" name="city" value="{{ form.get('city','') }}" placeholder="e.g. Wuse 2">
+            </div>
+            <div class="field">
+              <label for="state">State</label>
+              <input id="state" name="state" value="{{ form.get('state','') }}" placeholder="e.g. FCT">
+            </div>
+            <div class="field">
+              <label for="country">Country</label>
+              <input id="country" name="country" value="{{ form.get('country','Nigeria') }}">
+            </div>
+          </div>
+          <div class="field">
+            <label for="whatsapp">WhatsApp number</label>
+            <input id="whatsapp" name="whatsapp" value="{{ form.get('whatsapp','') }}" placeholder="Used by buyers to reach you fast">
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Seller profile <span class="hint" style="display:inline">(only needed if you're selling)</span></legend>
+          <div class="field">
+            <label for="business_name">Kennel / business name</label>
+            <input id="business_name" name="business_name" value="{{ form.get('business_name','') }}" placeholder="e.g. Bello Kennels">
+          </div>
+          <div class="field">
+            <label for="bio">About you / your kennel</label>
+            <textarea id="bio" name="bio" rows="3" placeholder="Tell buyers how you raise your dogs, health practices, delivery options…">{{ form.get('bio','') }}</textarea>
+          </div>
+        </fieldset>
+
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Create my account</button>
+        <p class="center small mt-2">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
